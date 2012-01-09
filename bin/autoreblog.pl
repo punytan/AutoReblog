@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use sane;
 use Encode;
 use App::AutoReblog;
