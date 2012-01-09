@@ -1,5 +1,8 @@
 Revision history for Perl extension App::AutoReblog
 
+0.03    Mon Jan  9 23:25:10 2012
+        - fix about dist
+
 0.02    Mon Jan  9 23:17:22 2012
         - initial release
 
