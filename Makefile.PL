@@ -12,7 +12,7 @@ requires 'JSON';
 tests 't/*.t';
 author_tests 'xt';
 
-test_requires 'Test::More';
+test_requires 'Test::More'  => 0.98;
 
 install_script 'bin/autoreblog.pl';
 
