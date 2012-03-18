@@ -43,6 +43,8 @@ sub reblog {
     my ($self, $item) = @_;
 
     my $posts = $self->posts($item);
+
+    return if $posts->{meta}{status} == 404;
     for my $post (@{ $posts->{response}{posts} }) {
         my $res = LWP::UserAgent->new->post(
             'http://www.tumblr.com/api/reblog', {
