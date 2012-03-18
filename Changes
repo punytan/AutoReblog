@@ -1,5 +1,10 @@
 Revision history for Perl extension App::AutoReblog
 
+0.04    Sun Mar 18 13:14:50 2012
+        - fix author tests
+        - fetch more items from starred
+        - ignore non-existence article
+
 0.03    Mon Jan  9 23:25:10 2012
         - fix about dist
 
