@@ -21,7 +21,7 @@ sub api_key { shift->{tumblr}{api_key} };
 sub run {
     my $self = shift;
     my $reader  = $self->reader;
-    my @entries = $reader->starred->entries;
+    my @entries = $reader->starred(count => 100)->entries;
 
     for my $item (@entries) {
         next unless $self->is_tumblr($item);
