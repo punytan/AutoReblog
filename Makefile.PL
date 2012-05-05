@@ -8,6 +8,7 @@ requires 'WebService::Google::Reader';
 requires 'LWP::UserAgent';
 requires 'sane';
 requires 'JSON';
+requires 'Config::PP';
 
 tests 't/*.t';
 author_tests 'xt';
