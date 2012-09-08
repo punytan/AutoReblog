@@ -1,5 +1,8 @@
 Revision history for Perl extension App::AutoReblog
 
+0.06    Sun Sep  9 06:00:24 2012
+        - bug fix
+
 0.05    Sun Sep  9 01:02:59 2012
         - use API v2
 

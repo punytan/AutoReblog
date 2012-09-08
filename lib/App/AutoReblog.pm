@@ -1,6 +1,6 @@
 package App::AutoReblog;
 use sane;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use JSON;
 use LWP::UserAgent;
