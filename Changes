@@ -1,5 +1,8 @@
 Revision history for Perl extension App::AutoReblog
 
+0.05    Sun Sep  9 01:02:59 2012
+        - use API v2
+
 0.04    Sun Mar 18 13:14:50 2012
         - fix author tests
         - fetch more items from starred
