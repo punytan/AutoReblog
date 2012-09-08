@@ -9,6 +9,7 @@ requires 'LWP::UserAgent';
 requires 'sane';
 requires 'JSON';
 requires 'Config::PP';
+requires 'OAuth::Lite';
 
 tests 't/*.t';
 author_tests 'xt';
