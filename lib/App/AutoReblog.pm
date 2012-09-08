@@ -2,60 +2,106 @@ package App::AutoReblog;
 use sane;
 our $VERSION = '0.04';
 
-use Carp;
 use JSON;
 use LWP::UserAgent;
 use WebService::Google::Reader;
+use OAuth::Lite::Consumer;
+use OAuth::Lite::Token;
 
 sub new {
     my ($class, %args) = @_;
 
-    $args{tumblr}{api_key} ||=
-        'YnPjExTByIKq3Orr5zeNp4X3MUNI0Ta6bT0dFRRH4jfXayrfHz';
-
-    bless \%args, $class;
+    bless {
+        google => {
+            username => $args{google}{username},
+            password => $args{google}{password},
+        },
+        tumblr => {
+            consumer_key        => $args{tumblr}{consumer_key},
+            consumer_secret     => $args{tumblr}{consumer_secret},
+            access_token        => $args{tumblr}{access_token},
+            access_token_secret => $args{tumblr}{access_token_secret},
+        },
+        consumer => undef,
+    }, $class;
 }
 
-sub api_key { shift->{tumblr}{api_key} };
+sub api_key { shift->{tumblr}{consumer_key} };
 
 sub run {
     my $self = shift;
     my $reader  = $self->reader;
     my @entries = $reader->starred(count => 100)->entries;
+    my $base_hostname = $self->me;
 
     for my $item (@entries) {
         next unless $self->is_tumblr($item);
-        $self->reblog($item);
+        $self->reblog($item, $base_hostname);
         $reader->unstar_entry($item);
     }
 }
 
 sub reader {
-    my ($self) = @_;
+    my $self   = shift;
+    my $google = $self->{google};
+
     WebService::Google::Reader->new(
-        username => $self->{google}{username},
-        password => $self->{google}{password},
+        username => $google->{username},
+        password => $google->{password},
         secure   => 1,
     );
 }
 
-sub reblog {
-    my ($self, $item) = @_;
+sub consumer {
+    my $self = shift;
 
+    $self->{consumer} ||= do {
+        my $tumblr = $self->{tumblr};
+
+        my $consumer = OAuth::Lite::Consumer->new(
+            consumer_key    => $tumblr->{consumer_key},
+            consumer_secret => $tumblr->{consumer_secret},
+        );
+
+        my $token = OAuth::Lite::Token->new(
+            token  => $tumblr->{access_token},
+            secret => $tumblr->{access_token_secret},
+        );
+
+        $consumer->access_token($token);
+        $consumer;
+    };
+}
+
+sub me {
+    my $self = shift;
+
+    my $res = $self->consumer->post("http://api.tumblr.com/v2/user/info");
+
+    $res->is_success or die "[tumblr] (me) " . $res->status_line;
+
+    my $me = JSON::decode_json($res->decoded_content);
+
+    URI->new($me->{response}{user}{blogs}[0]{url})->host;
+}
+
+sub reblog {
+    my ($self, $item, $base_hostname) = @_;
     my $posts = $self->posts($item);
 
     return if $posts->{meta}{status} == 404;
+
     for my $post (@{ $posts->{response}{posts} }) {
-        my $res = LWP::UserAgent->new->post(
-            'http://www.tumblr.com/api/reblog', {
-                email        => $self->{tumblr}{email},
-                password     => $self->{tumblr}{password},
-                'post-id'    => $post->{id},
-                'reblog-key' => $post->{reblog_key},
-            }
+        my $res = $self->consumer->request(
+            method => 'POST',
+            url    => "http://api.tumblr.com/v2/blog/$base_hostname/post/reblog",
+            params => {
+                id => $post->{id},
+                reblog_key => $post->{reblog_key},
+            },
         );
 
-        $res->is_success or Carp::croak $res->status_line;
+        $res->is_success or die "[tumblr] (reblog) " . $res->status_line;
     }
 }
 
@@ -64,18 +110,13 @@ sub posts {
     my ($uri, $id) = $self->parse($item);
     my $host = $uri->host;
 
-    my $api = URI->new("http://api.tumblr.com/v2/blog/$host/posts");
-    $api->query_form(
+    my $res = LWP::UserAgent->new->get(
+        "http://api.tumblr.com/v2/blog/$host/posts",
+        id      => $id,
         api_key => $self->api_key,
-        id => $id,
     );
 
-    my $res = LWP::UserAgent->new->get($api);
-    if ($res->is_success) {
-        return JSON::decode_json $res->content;
-    } else {
-        Carp::croak "Failed to access tumblr, " . $res->status_line;
-    }
+    JSON::decode_json($res->decoded_content);
 }
 
 sub parse {
