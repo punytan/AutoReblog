@@ -110,11 +110,13 @@ sub posts {
     my ($uri, $id) = $self->parse($item);
     my $host = $uri->host;
 
-    my $res = LWP::UserAgent->new->get(
-        "http://api.tumblr.com/v2/blog/$host/posts",
+    my $api = URI->new("http://api.tumblr.com/v2/blog/$host/posts");
+    $api->query_form(
         id      => $id,
         api_key => $self->api_key,
     );
+
+    my $res = LWP::UserAgent->new->get($api);
 
     JSON::decode_json($res->decoded_content);
 }
